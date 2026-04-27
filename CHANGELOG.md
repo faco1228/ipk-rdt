@@ -50,6 +50,17 @@ All notable work on the project is summarized here.
 
 ---
 
+## 2026-04-27 (2)
+
+### Packet decode
+
+- implemented `decode()` — validates length, payload_len, CRC32, and packet type
+- loads header via memcpy, zeroes checksum field before CRC verification
+- converts all fields from big-endian via ntohs/ntohl
+- throws std::runtime_error on any invalid or corrupted packet
+
+---
+
 ## Known limitations
 
 - none known at this stage of development

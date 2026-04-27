@@ -57,7 +57,11 @@ Packet::Packet(PacketType type, uint8_t flags, uint16_t connection_id, uint32_t 
     : type_(type), flags_(flags), connection_id_(connection_id), seq_num_(seq_num), ack_num_(ack_num), payload_(payload)
 {}
 
-
+/**
+ * @brief 
+ * 
+ * @return std::vector<uint8_t> 
+ */
 std::vector<uint8_t> Packet::encode() const {
     // fill up the header
     Header head;
@@ -83,3 +87,40 @@ std::vector<uint8_t> Packet::encode() const {
     std::memcpy(raw.data(), &head, HEADER_SIZE);
     return raw;
 }
+
+Packet Packet::decode(const std::vector<uint8_t>& raw){
+    // check for minimal lenght
+    if (raw.size() < HEADER_SIZE) {
+        throw std::runtime_error("Packet too short");
+    }
+
+    // load header
+    Header head;
+    std::memcpy(&head, raw.data(), HEADER_SIZE);
+
+    // check payload_len
+    uint16_t payload_len = ntohs(head.payload_len);
+    if (HEADER_SIZE + payload_len > raw.size()) {
+        throw std::runtime_error("Truncated payload");
+    }
+
+    // check CRC32
+    uint32_t received_crc = ntohl(head.checksum);
+    head.checksum = 0;
+    std::vector<uint8_t> buf(raw.begin(), raw.begin() + HEADER_SIZE + payload_len);
+    std::memcpy(buf.data(), &head, HEADER_SIZE);
+    uint32_t computed_crc = compute_crc32(buf.data(), buf.size());
+    if (received_crc != computed_crc) {
+        throw std::runtime_error("CRC32 mismatch");
+    }
+
+    // check type
+    PacketType type = static_cast<PacketType>(head.type);
+    if (head.type < 0x01 || head.type > 0x07) {
+        throw std::runtime_error("Uknown packet type");
+    }
+
+    // build payload and return
+    std::vector<uint8_t> payload(raw.begin() + HEADER_SIZE, raw.begin() + HEADER_SIZE + payload_len);
+    return Packet(type, head.flags, ntohs(head.connection_id), ntohl(head.seq_num), ntohl(head.ack_num), payload);
+} 

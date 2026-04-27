@@ -63,7 +63,7 @@ public:
      * @brief 
      * 
      */
-    static Packet decode(const std::vector<uint8_t>& data);
+    static Packet decode(const std::vector<uint8_t>& raw);
 
     /**
      * @brief 
