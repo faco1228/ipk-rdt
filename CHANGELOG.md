@@ -61,6 +61,22 @@ All notable work on the project is summarized here.
 
 ---
 
+## 2026-04-28
+
+### UdpSocket implementation
+
+- implemented `UdpSocket` class with RAII socket management
+- implemented `open()` — creates UDP socket via socket(family, SOCK_DGRAM, 0)
+- implemented `bind()` — server side: getaddrinfo + SO_REUSEADDR + bind()
+- implemented `resolve()` — client side: getaddrinfo + stores dest_addr_ via memcpy
+- implemented `send()` — sendto stored dest_addr_
+- implemented `send_to()` — sendto explicit address (server → client)
+- implemented `receive()` — recvfrom with buffer resize to actual received size
+- added non-copyable semantics (deleted copy constructor and assignment operator)
+- destructor closes socket fd if open
+
+---
+
 ## Known limitations
 
 - none known at this stage of development
