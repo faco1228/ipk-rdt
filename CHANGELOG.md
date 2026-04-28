@@ -77,6 +77,17 @@ All notable work on the project is summarized here.
 
 ---
 
+## 2026-04-28 (2)
+
+### main.cpp
+
+- implemented signal handling via sigaction (SIGINT, SIGTERM) with global g_interrupted flag
+- implemented argument parsing and mode dispatch (CLIENT → Sender, SERVER → Receiver)
+- added exception handling (invalid_argument, runtime_error, catch-all)
+- Sender/Receiver calls stubbed out pending implementation
+
+---
+
 ## Known limitations
 
 - none known at this stage of development
