@@ -14,8 +14,8 @@
 
 #include <vector>
 #include <cstdint>
-#include <chrono>
 #include <utility>
+#include <chrono>
 
 struct Segment {
     uint32_t seq_num;

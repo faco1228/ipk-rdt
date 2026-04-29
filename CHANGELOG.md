@@ -103,6 +103,19 @@ All notable work on the project is summarized here.
 
 ---
 
+## 2026-04-29 (2)
+
+### RecvBuffer implementation
+
+- implemented `RecvBuffer` class with reorder buffer using std::map
+- implemented `insert()` — ignores duplicates and segments before exp_next_
+- implemented `flush()` — delivers in-order data, advances exp_next_
+- implemented `get_ack_num()` — returns next expected byte
+- implemented `get_sack_blocks()` — returns max 3 SACK blocks for out-of-order segments
+- added unit tests for RecvBuffer, all passing
+
+---
+
 ## Known limitations
 
 - none known at this stage of development
