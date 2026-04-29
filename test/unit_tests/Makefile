@@ -7,7 +7,7 @@ CXXFLAGS = -std=c++20 -O2 -Wall -Wextra -pedantic -I../../inc
 SRC_DIR  = ../../src
 BUILD_DIR = build
 
-TESTS = test_packet
+TESTS = test_packet test_sender_window
 
 .PHONY: all clean $(TESTS)
 
@@ -17,6 +17,12 @@ test_packet: $(BUILD_DIR)/test_packet
 	./$(BUILD_DIR)/test_packet
 
 $(BUILD_DIR)/test_packet: test_packet.cpp $(SRC_DIR)/packet.cpp | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) $^ -o $@
+
+test_sender_window: $(BUILD_DIR)/test_sender_window
+	./$(BUILD_DIR)/test_sender_window
+
+$(BUILD_DIR)/test_sender_window: test_sender_window.cpp $(SRC_DIR)/sender_window.cpp | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 $(BUILD_DIR):
