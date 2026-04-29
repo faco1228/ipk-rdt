@@ -109,7 +109,7 @@ Klient                          Server
   │                               │  Server: LISTEN
   │──── SYN (conn_id, seq=0) ────►│  Server: SYN_RCVD
   │                               │
-  │◄─── SYN_ACK (ack=1) ─────────│
+  │◄─── SYN_ACK (ack=1) ──────────│
   │                               │
   │──── ACK (ack=1) ─────────────►│  Server: ESTABLISHED
   │                               │  Klient: ESTABLISHED
@@ -137,7 +137,7 @@ Klient                          Server
   │──── DATA (seq=1181) ─────────►│
   │──── DATA (seq=2361) ─────────►│  ← window = 32 segmentov in-flight
   │         ...                   │
-  │◄─── ACK (ack=1181, SACK) ────│  ← cumulative + SACK bloky
+  │◄─── ACK (ack=1181, SACK) ─────│  ← cumulative + SACK bloky
   │                               │
   │  [retransmisia stratených]    │
   │──── DATA (seq=...) ──────────►│
@@ -156,10 +156,10 @@ Ak je vstup prázdny (0 bytov), klient po handshake okamžite posiela FIN:
 ```
 Klient                          Server
   │──── SYN (seq=0) ────────────►│
-  │◄─── SYN_ACK (ack=1) ────────│
+  │◄─── SYN_ACK (ack=1) ─────────│
   │──── ACK (ack=1) ────────────►│
   │──── FIN (seq=1) ────────────►│  ← žiadne DATA, hneď FIN
-  │◄─── FIN_ACK (ack=2) ────────│
+  │◄─── FIN_ACK (ack=2) ─────────│
   │  [obe strany ukončia]        │
 ```
 
@@ -172,7 +172,7 @@ Klient                          Server
   │                               │
   │──── FIN (seq=N) ─────────────►│  ← všetky dáta odoslané a ACKnuté
   │                               │
-  │◄─── FIN_ACK (ack=N+1) ───────│  ← server dostal FIN
+  │◄─── FIN_ACK (ack=N+1) ────────│  ← server dostal FIN
   │                               │
   [klient ukončí]                 [server zapíše, ukončí]
 ```
@@ -187,6 +187,63 @@ Klient                          Server
 ---
 
 ## 4. Konečný stavový automat (FSM)
+
+### 4.0 FSM diagramy
+
+**Klient (Sender):**
+
+```
+┌─────────┐
+│  CLOSED │──── spustenie / send SYN ───────────────────────────────►┐
+└─────────┘                                                          │
+                                                                     ▼
+                ┌── RTO timeout: retransmit SYN, RTO×2      ┌─────────────────┐
+                └──────────────────────────────────────────►│    SYN_SENT     │
+                                                            └────────┬────────┘
+                                                                     │ recv SYN_ACK / send ACK
+                                                                     ▼
+                ┌── recv ACK: posun okna                    ┌─────────────────┐
+                ├── recv SACK: označ segmenty            ┌──┤   ESTABLISHED   │
+                ├── RTO timeout: retransmit seg., RTO×2  └─►└────────┬────────┘
+                └──────────────────────────────────────────────────  │
+                                                     EOF + all_acked │ / send FIN
+                                                                     ▼
+                ┌── RTO timeout: retransmit FIN, RTO×2      ┌─────────────────┐
+                └──────────────────────────────────────────►│    FIN_SENT     │
+                                                            └────────┬────────┘
+                                                                     │ recv FIN_ACK
+                                                                     ▼
+                                                            ┌─────────────────┐
+                                                            │      DONE       │
+                                                            └─────────────────┘
+         global timeout / RST / SIGINT → ERROR  (z ľubovoľného stavu)
+```
+
+**Server (Receiver):**
+
+```
+┌─────────┐
+│  LISTEN │──── recv SYN / send SYN_ACK ───────────────────────────►┐
+└─────────┘                                                         │
+                                                                    ▼
+           ┌── RTO timeout: retransmit SYN_ACK, RTO×2       ┌───────────────┐
+           ├── recv dup. SYN: retransmit SYN_ACK         ┌──┤   SYN_RCVD    │
+           └──────────────────────────────────────────►  └─►└───────┬───────┘
+                                                                     │ recv ACK / recv DATA
+                                                                     ▼
+           ┌── recv DATA: RecvBuffer, flush, ACK+SACK     ┌─────────────────┐
+           ├── recv dup. DATA: send ACK               ┌───┤   ESTABLISHED   │
+           └────────────────────────────────────────► └──►└─────────┬───────┘
+                                                                    │ recv FIN (all data rcvd)
+                                                                    │ flush / send FIN_ACK
+                                                                    ▼
+                                                           ┌─────────────────┐
+                                                           │      DONE       │
+                                                           └─────────────────┘
+         global timeout / RST / SIGINT → ERROR  (z ľubovoľného stavu)
+```
+
+---
 
 ### 4.1 Klient (Sender)
 

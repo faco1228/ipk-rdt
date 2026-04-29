@@ -132,6 +132,22 @@ All notable work on the project is summarized here.
 
 ---
 
+## 2026-04-29 (4)
+
+### Receiver implementation
+
+- implemented `Receiver` class: constructor, `run()`, `handshake()`, `receive_data()`, `send_ack()`
+- `run()` binds socket via `socket_.bind()`, then calls `handshake()` → `receive_data()`
+- `handshake()` — waits for SYN, stores `connection_id_` and `client_addr_`, sends SYN_ACK, returns
+- `receive_data()` — writes output to file or stdout via `std::ostream*`, processes DATA/FIN/SYN packets, handles out-of-order delivery via `RecvBuffer`, sends ACK+SACK after each DATA
+- `send_ack()` — builds ACK packet with cumulative ack_num + SACK payload from `buffer_.get_sack_blocks()`; SACK blocks serialised as 8 B each (htonl start + htonl end)
+- handles FIN received before all DATA: buffers `fin_seq`, checks after each DATA insert if gap is filled
+- handles duplicate SYN in ESTABLISHED: retransmits SYN_ACK
+- `elapsed_ms()` — static helper, identical to Sender
+- added `receiver.hpp` and `receiver.cpp` to project
+
+---
+
 ## Known limitations
 
 - none known at this stage of development

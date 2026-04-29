@@ -15,8 +15,6 @@
 #include <string>
 #include <cstdint>
 
-
-
 enum class Mode {
     CLIENT,
     SERVER
