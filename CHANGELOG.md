@@ -116,6 +116,22 @@ All notable work on the project is summarized here.
 
 ---
 
+## 2026-04-29 (3)
+
+### Sender implementation
+
+- implemented `Sender` class: constructor, `run()`, `handshake()`, `send_data()`, `teardown()`
+- constructor initialises members via initializer list; `next_seq_` starts at 1 (SYN consumed seq 0)
+- `run()` resolves server address, generates random `connection_id` (1–65535 via mt19937), calls handshake → send_data → teardown
+- `handshake()` — 3-way handshake with poll()-based SYN retransmit and exponential backoff RTO
+- `send_data()` — sliding window transfer: reads input in 1180 B chunks, sends DATA packets, processes ACK+SACK, retransmits on RTO expiry, tracks global progress timer
+- `teardown()` — sends FIN, waits for FIN_ACK with exponential backoff retransmit
+- `elapsed_ms()` — static helper, returns ms since a given steady_clock time point
+- `parse_sack()` — parses up to 3 SACK blocks from ACK packet payload (8 B each, network byte order)
+- added `next_seq_` member to `Sender` for sharing state between `send_data()` and `teardown()`
+
+---
+
 ## Known limitations
 
 - none known at this stage of development
