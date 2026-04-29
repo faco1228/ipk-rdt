@@ -13,10 +13,11 @@
 #define SOCKET_HPP
 
 #include <sys/socket.h>
-#include <netdb.h>       // getaddrinfo
-#include <unistd.h>      // close
+#include <netdb.h> 
+#include <unistd.h>
 #include <cstdint>
 #include <vector>
+#include <string>
 
 class UdpSocket {
 public:

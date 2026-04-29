@@ -148,6 +148,26 @@ All notable work on the project is summarized here.
 
 ---
 
+## 2026-04-30
+
+### IPv6 dual-stack fix + extended test suite
+
+- fixed `UdpSocket::bind()`: when no address is given, try `AF_INET6` with `IPV6_V6ONLY=0` first (dual-stack socket accepting both IPv4 and IPv6); fall back to `AF_UNSPEC` getaddrinfo if IPv6 socket fails
+- root cause: `getaddrinfo` with `AF_UNSPEC + AI_PASSIVE` on Linux returns IPv4 `0.0.0.0` first — receiver was binding an IPv4 socket while sender was connecting via IPv6 `::1`, causing handshake timeout
+- added `#include <netinet/in.h>` to `socket.cpp` for `in6addr_any`, `IPV6_V6ONLY`, `sockaddr_in6`
+- extended `test/test.sh` with 8 new sections ([9]–[16]):
+  - [9] 1-byte transfer (minimal non-empty)
+  - [10] exactly MAX_PAYLOAD bytes (1180 B, single segment boundary)
+  - [11] MAX_PAYLOAD+1 bytes (1181 B, forces 2 segments)
+  - [12] binary data (0x00–0xFF, 256 bytes, verifies null-byte handling)
+  - [13] receiver stdout output (no `-o` flag, output captured via redirect)
+  - [14] receiver timeout when no sender arrives (exits non-zero within expected window)
+  - [15] 10 MB file transfer
+  - [16] exactly 32×MAX_PAYLOAD = 37 760 B (fills full sliding window)
+- all 56 tests pass on Linux (Ubuntu), 0 failed
+
+---
+
 ## Known limitations
 
 - none known at this stage of development

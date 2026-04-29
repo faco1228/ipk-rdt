@@ -14,6 +14,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <string>
+#include <netinet/in.h>
 
 /**
  * @brief 
@@ -53,9 +54,33 @@ UdpSocket::~UdpSocket() {
  * @param port 
  */
 void UdpSocket::bind(const std::string& address, const std::string& port) {
+    // When no address is specified, try dual-stack IPv6 first (accepts both IPv4 and IPv6).
+    // This is needed so the receiver can accept connections from ::1 and 127.0.0.1.
+    if (address.empty()) {
+        fd_ = socket(AF_INET6, SOCK_DGRAM, 0);
+        if (fd_ != -1) {
+            int off = 0;
+            setsockopt(fd_, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
+            int enable = 1;
+            setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable));
+
+            struct sockaddr_in6 addr6{};
+            addr6.sin6_family = AF_INET6;
+            addr6.sin6_addr = in6addr_any;
+            addr6.sin6_port = htons(static_cast<uint16_t>(std::stoi(port)));
+
+            if (::bind(fd_, reinterpret_cast<sockaddr*>(&addr6), sizeof(addr6)) == 0) {
+                return; // dual-stack bind succeeded
+            }
+            // fall back to IPv4 below
+            close(fd_);
+            fd_ = -1;
+        }
+    }
+
     struct addrinfo hints{};
     struct addrinfo* result = nullptr;
-    
+
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_flags = AI_PASSIVE; // address == "" -> bind all
@@ -70,7 +95,7 @@ void UdpSocket::bind(const std::string& address, const std::string& port) {
         throw std::runtime_error(std::string("getaddrinfo failed: ") + gai_strerror(rc));
     }
     open(result->ai_family);
-    
+
     int enable = 1;
     setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable));
 

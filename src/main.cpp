@@ -38,12 +38,12 @@ int main(int argc, char* argv[]) {
         Config config = parser.parse(argc, argv);
 
         if (config.mode == Mode::CLIENT) {
-            // Sender sender(config);
-            // sender.run();
+            Sender sender(config);
+            sender.run();
         }
         else {
-            // Receiver receiver(config);
-            // receiver.run();
+            Receiver receiver(config);
+            receiver.run();
         }
 
         return 0;

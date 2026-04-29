@@ -45,7 +45,7 @@ std::vector<std::pair<uint32_t, uint32_t>> Sender::parse_sack(const Packet& pack
 
     const std::vector<uint8_t>& payload = packet.payload();
     std::vector<std::pair<uint32_t, uint32_t>> blocks;
-    int offset = 0;
+    size_t offset = 0;
 
     while (offset + 8 <= payload.size() && blocks.size() < 3) {
         uint32_t start = 0, end = 0;
