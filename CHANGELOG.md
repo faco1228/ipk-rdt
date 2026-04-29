@@ -88,6 +88,21 @@ All notable work on the project is summarized here.
 
 ---
 
+## 2026-04-29
+
+### SenderWindow implementation
+
+- implemented `SenderWindow` class with sliding window logic (max 32 segments)
+- implemented `push()` — adds segment with send_time and initial RTO
+- implemented `ack_received()` — cumulative ACK erase via remove_if + SACK marking
+- implemented `get_timed_out()` — returns segments whose RTO has expired
+- implemented `mark_retransmitted()` — doubles RTO (exponential backoff), resets send_time
+- implemented `has_capacity()` — checks window size < 32
+- implemented `all_acked()` — checks segments_ is empty
+- implemented `next_timeout()` — returns ms until nearest expiring timer (for poll())
+
+---
+
 ## Known limitations
 
 - none known at this stage of development
