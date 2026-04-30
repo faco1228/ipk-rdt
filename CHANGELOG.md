@@ -168,6 +168,24 @@ All notable work on the project is summarized here.
 
 ---
 
+## 2026-04-30 (2)
+
+### Code style refactoring — all source files
+
+- refactored all 16 source files to match project 1 coding style
+- Doxygen headers: lowercase `@brief`, `@param`, `@return`, `@throws`; `What happens here:` numbered list in file-level doc
+- `.cpp` files: `///////////////////////////////////////////////////////////////////////////////` separators between every function/method
+- inline field comments: `//` only (no `///<`), no column alignment, no capital letters, no periods
+- enum values: no padding/alignment between name and `=`
+- no ternary operators — all replaced with full `if/else`
+- fixed author field in `main.cpp` and `config.hpp` (was missing `Fačka`)
+- removed typo `*cConverts` in `packet.hpp`
+- renamed `received` → `fin_received` and `seq` → `fin_seq` in `receiver.cpp` for clarity
+- added duplicate mode flag detection in `arg.cpp` (both `-c` and `-s` → throw)
+- member variable inline comments in all `.hpp` files describe purpose, not type
+
+---
+
 ## Known limitations
 
 - none known at this stage of development

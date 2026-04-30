@@ -3,7 +3,7 @@
 # Samuel Facka (xfackas00)
 #
 # Run with: make test
-# or:       chmod +x test/test.sh && ./test/test.sh
+#       or: chmod +x test/test.sh && ./test/test.sh
 
 BINARY="./ipk-rdt"
 PORT=19500
