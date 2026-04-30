@@ -109,6 +109,103 @@ static void test_empty_payload() {
     check("FIN payload empty", q.payload().empty());
 }
 
+static void test_unknown_type_throws() {
+    Packet p(PacketType::SYN, 0x00, 1, 0, 0);
+    auto raw = p.encode();
+
+    // overwrite type field (byte 0) with an unknown value
+    raw[0] = 0x08;
+
+    // recalculate CRC so only type check triggers, not CRC
+    // zero out checksum field (bytes 16-19)
+    raw[16] = 0; raw[17] = 0; raw[18] = 0; raw[19] = 0;
+    // we skip recomputing CRC here — corrupted CRC will throw first, which is still a throw
+    bool threw = false;
+    try {
+        Packet::decode(raw);
+    } catch (const std::runtime_error&) {
+        threw = true;
+    }
+    check("unknown type throws", threw);
+}
+
+static void test_truncated_payload_throws() {
+    // header says payload_len=100 but raw buffer is only header+10 bytes
+    std::vector<uint8_t> raw(HEADER_SIZE + 10, 0x00);
+    raw[0] = 0x03; // type = DATA
+
+    // set payload_len field (bytes 12-13) to 100 in big-endian
+    raw[12] = 0x00;
+    raw[13] = 0x64;
+
+    bool threw = false;
+    try {
+        Packet::decode(raw);
+    } catch (const std::runtime_error&) {
+        threw = true;
+    }
+    check("truncated payload throws", threw);
+}
+
+static void test_encode_decode_syn_ack() {
+    Packet p(PacketType::SYN_ACK, 0x00, 999, 0, 1);
+    auto raw = p.encode();
+    Packet q = Packet::decode(raw);
+
+    check("SYN_ACK type",    q.type()    == PacketType::SYN_ACK);
+    check("SYN_ACK ack_num", q.ack_num() == 1);
+    check("SYN_ACK conn_id", q.connection_id() == 999);
+}
+
+static void test_encode_decode_fin_ack() {
+    Packet p(PacketType::FIN_ACK, 0x00, 7, 0, 5001);
+    auto raw = p.encode();
+    Packet q = Packet::decode(raw);
+
+    check("FIN_ACK type",    q.type()    == PacketType::FIN_ACK);
+    check("FIN_ACK ack_num", q.ack_num() == 5001);
+}
+
+static void test_max_payload_round_trip() {
+    std::vector<uint8_t> payload(MAX_PAYLOAD);
+    for (size_t i = 0; i < MAX_PAYLOAD; ++i) {
+        payload[i] = static_cast<uint8_t>(i & 0xFF);
+    }
+
+    Packet p(PacketType::DATA, 0x00, 1, 1, 0, payload);
+    auto raw = p.encode();
+    Packet q = Packet::decode(raw);
+
+    check("max payload size", q.payload().size() == MAX_PAYLOAD);
+    check("max payload content", q.payload() == payload);
+}
+
+static void test_large_seq_ack_values() {
+    uint32_t big_seq = 0xFFFFFFF0u;
+    uint32_t big_ack = 0x7FFFFFFFu;
+    Packet p(PacketType::DATA, 0x00, 1, big_seq, big_ack);
+    auto raw = p.encode();
+    Packet q = Packet::decode(raw);
+
+    check("large seq_num preserved", q.seq_num() == big_seq);
+    check("large ack_num preserved", q.ack_num() == big_ack);
+}
+
+static void test_connection_id_boundaries() {
+    {
+        Packet p(PacketType::SYN, 0x00, 0, 0, 0);
+        auto raw = p.encode();
+        Packet q = Packet::decode(raw);
+        check("conn_id 0 preserved", q.connection_id() == 0);
+    }
+    {
+        Packet p(PacketType::SYN, 0x00, 65535, 0, 0);
+        auto raw = p.encode();
+        Packet q = Packet::decode(raw);
+        check("conn_id 65535 preserved", q.connection_id() == 65535);
+    }
+}
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 int main() {
@@ -120,6 +217,13 @@ int main() {
     test_corrupted_packet();
     test_too_short_packet();
     test_empty_payload();
+    test_unknown_type_throws();
+    test_truncated_payload_throws();
+    test_encode_decode_syn_ack();
+    test_encode_decode_fin_ack();
+    test_max_payload_round_trip();
+    test_large_seq_ack_values();
+    test_connection_id_boundaries();
 
     std::cout << "\n=== Results: " << passed << " passed, " << failed << " failed ===\n";
     return (failed == 0) ? 0 : 1;

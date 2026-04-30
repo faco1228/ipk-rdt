@@ -121,6 +121,90 @@ static void test_empty_flush() {
     check("empty flush returns empty vector", result.empty());
 }
 
+static void test_multiple_flushes() {
+    RecvBuffer buf;
+    std::vector<uint8_t> d1 = {0x01, 0x02};
+    std::vector<uint8_t> d2 = {0x03, 0x04};
+    std::vector<uint8_t> d3 = {0x05, 0x06};
+
+    buf.insert(1, d1);
+    auto r1 = buf.flush();
+    check("first flush size", r1.size() == 2);
+    check("ack_num after first flush", buf.get_ack_num() == 3);
+
+    buf.insert(3, d2);
+    auto r2 = buf.flush();
+    check("second flush size", r2.size() == 2);
+    check("ack_num after second flush", buf.get_ack_num() == 5);
+
+    buf.insert(5, d3);
+    auto r3 = buf.flush();
+    check("third flush size", r3.size() == 2);
+    check("ack_num after third flush", buf.get_ack_num() == 7);
+}
+
+static void test_single_byte_segments() {
+    RecvBuffer buf;
+
+    buf.insert(1, {0xAA});
+    buf.insert(2, {0xBB});
+    buf.insert(3, {0xCC});
+
+    auto data = buf.flush();
+    check("three 1-byte segments size", data.size() == 3);
+    check("1-byte segment content", data == std::vector<uint8_t>({0xAA, 0xBB, 0xCC}));
+    check("ack_num after 1-byte segments", buf.get_ack_num() == 4);
+}
+
+static void test_duplicate_seq_different_data() {
+    RecvBuffer buf;
+
+    buf.insert(1, {0x01, 0x02});
+    buf.insert(1, {0xFF, 0xFF}); // same seq, different data — should be ignored
+
+    auto data = buf.flush();
+    check("second insert with same seq ignored", data == std::vector<uint8_t>({0x01, 0x02}));
+}
+
+static void test_sack_one_block() {
+    RecvBuffer buf;
+    std::vector<uint8_t> data(5, 0x00);
+
+    buf.insert(6, data); // gap at 1-5
+
+    auto sack = buf.get_sack_blocks();
+    check("one out-of-order = one sack block", sack.size() == 1);
+    check("sack block start", sack[0].first == 6);
+    check("sack block end",   sack[0].second == 11);
+}
+
+static void test_sack_two_blocks() {
+    RecvBuffer buf;
+    std::vector<uint8_t> data(5, 0x00);
+
+    buf.insert(6,  data); // gap at 1-5
+    buf.insert(16, data); // gap at 11-15
+
+    auto sack = buf.get_sack_blocks();
+    check("two sack blocks", sack.size() == 2);
+    check("block 1 start", sack[0].first == 6);
+    check("block 1 end",   sack[0].second == 11);
+    check("block 2 start", sack[1].first == 16);
+    check("block 2 end",   sack[1].second == 21);
+}
+
+static void test_flush_stops_at_gap() {
+    RecvBuffer buf;
+
+    buf.insert(1, {0x01, 0x02}); // seq 1, size 2 → covers 1-2
+    buf.insert(4, {0x03, 0x04}); // seq 4 — gap at 3
+
+    auto data = buf.flush();
+    check("flush stops before gap", data.size() == 2);
+    check("ack_num stops at gap", buf.get_ack_num() == 3);
+    check("sack block for segment after gap", !buf.get_sack_blocks().empty());
+}
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 int main() {
@@ -133,6 +217,12 @@ int main() {
     test_old_segment_ignored();
     test_sack_blocks();
     test_empty_flush();
+    test_multiple_flushes();
+    test_single_byte_segments();
+    test_duplicate_seq_different_data();
+    test_sack_one_block();
+    test_sack_two_blocks();
+    test_flush_stops_at_gap();
 
     std::cout << "\n=== Results: " << passed << " passed, " << failed << " failed ===\n";
     return (failed == 0) ? 0 : 1;
