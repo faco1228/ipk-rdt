@@ -45,7 +45,7 @@ test: $(TARGET)
 	chmod +x $(TEST_DIR)/test.sh
 	./$(TEST_DIR)/test.sh
 
-zip:
-	zip -r $(ZIP_NAME) src inc test Makefile README.md CHANGELOG.md LICENSE
+zip: purge
+	zip -r $(ZIP_NAME) src inc test Makefile README.md CHANGELOG.md LICENSE -x "test/unit_tests/build/*" -x "test/unit_tests/build/"
 
 -include $(DEPS)
