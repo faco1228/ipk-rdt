@@ -869,3 +869,5 @@ The Open Group. *socket(2), bind(2), recvfrom(2), sendto(2) — POSIX socket API
 The Open Group. *sigaction(2) — examine and change a signal action* [online]. POSIX.1-2017. The Open Group, 2018. Available at: https://pubs.opengroup.org/onlinepubs/9699919799/functions/sigaction.html. [cit. 2026-04-28].
 
 The Open Group. *htons(3), htonl(3), ntohs(3), ntohl(3) — convert values between host and network byte order* [online]. POSIX.1-2017. The Open Group, 2018. Available at: https://pubs.opengroup.org/onlinepubs/9699919799/functions/htonl.html. [cit. 2026-04-28].
+
+ANTHROPIC. *Claude* [online]. San Francisco: Anthropic, 2025. Available at: https://claude.ai. [cit. 2026-05-03]. This project was developed with the assistance of Claude (Anthropic). AI assistance was used in the planning and design of the transport protocol, packet format, and software architecture. Unit tests and test suite were also developed with AI assistance.

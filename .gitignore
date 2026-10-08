@@ -1,2 +1,5 @@
 development.md
 build/
+.DS_Store
+# course-provided testing proxy
+test_ipk_rdt.c
